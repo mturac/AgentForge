@@ -1,0 +1,16 @@
+{
+  "model": "glm-5.3-flash",
+  "base": "https://open.bigmodel.cn/api/coding/paas/v4",
+  "when": "2026-08-26 22:10",
+  "thinks_by_default": null,
+  "off_switch_works": null,
+  "effort_tokens_accepted": [
+    "low",
+    "high",
+    "max",
+    "medium"
+  ],
+  "acceptance_only": true,
+  "honesty": "This capture records request shapes + HTTP 200 acceptance only. Behavioral claims (default thinking / off-switch obedience) are NOT proven here — marked null until a response-trace capture lands.",
+  "capture": "wire-captures/glm-5.3-flash/capture.json"
+}
