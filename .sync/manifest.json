@@ -1,0 +1,35 @@
+{
+  "assemblies": [
+    {
+      "dest": "src/forge/gateway.ts",
+      "encoding": "utf-8",
+      "parts": [
+        "gateway.00",
+        "gateway.01",
+        "gateway.02",
+        "gateway.03",
+        "gateway.04",
+        "gateway.05",
+        "gateway.06",
+        "gateway.07"
+      ],
+      "sha256": "4fdf49aef8dad1e879bf03f380962fe5cd79db402c6e224266784f641959ddfb",
+      "size": 22907
+    },
+    {
+      "dest": "test/forge.test.ts",
+      "encoding": "utf-8",
+      "parts": [
+        "forge_test.00",
+        "forge_test.01",
+        "forge_test.02",
+        "forge_test.03",
+        "forge_test.04",
+        "forge_test.05",
+        "forge_test.06"
+      ],
+      "sha256": "dbe1a9d28e9c023acee1aca23245b34451a8b7db8e3ff4514b6e158e38a10123",
+      "size": 20240
+    }
+  ]
+}
