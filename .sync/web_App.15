@@ -1,0 +1,88 @@
+ || "—"} · {members.length} members
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {members.map((m) => (
+                  <span
+                    key={m.id}
+                    className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--card-2)] px-2 py-0.5 text-[10px]"
+                  >
+                    {avatarFor(m)} {m.name}
+                  </span>
+                ))}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ChatPane(props: {
+  title: string;
+  subtitle?: string;
+  messages: ChatMessage[];
+  agents: Agent[];
+  prompt: string;
+  routeNote: string;
+  busy: boolean;
+  disabled?: boolean;
+  placeholder?: string;
+  onPrompt: (v: string) => void;
+  onSend: () => void;
+}) {
+  return (
+    <div className="flex min-h-[560px] flex-col rounded-2xl border border-[var(--line)] bg-[var(--panel)]">
+      <div className="border-b border-[var(--line)] px-4 py-3">
+        <div className="flex items-center gap-2 font-semibold">
+          <MessageSquare className="size-4 text-[var(--accent)]" />
+          {props.title}
+        </div>
+        {props.subtitle ? (
+          <div className="mt-1 text-xs text-[var(--muted)]">{props.subtitle}</div>
+        ) : null}
+      </div>
+      <div className="flex-1 space-y-3 overflow-auto p-4">
+        {props.messages.length === 0 ? (
+          <div className="text-sm text-[var(--muted)]">No messages yet.</div>
+        ) : (
+          props.messages.map((m) => {
+            const who =
+              m.role === "user"
+                ? "You"
+                : props.agents.find((a) => a.id === m.agentId)?.name ||
+                  "Assistant";
+            return (
+              <div
+                key={m.id}
+                className={cx(
+                  "rounded-xl border px-3 py-2",
+                  m.role === "assistant"
+                    ? "border-emerald-200 bg-emerald-50/80"
+                    : "border-[var(--border)] bg-[var(--card-2)]",
+                )}
+              >
+                <div className="mb-1 flex items-center gap-2 text-[11px] text-[var(--accent)]">
+                  {who}
+                  {m.meta?.route ? (
+                    <span className="inline-flex items-center gap-1 text-[var(--muted)]">
+                      <Route className="size-3" /> {String(m.meta.route)}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="whitespace-pre-wrap text-sm">{m.content}</div>
+              </div>
+            );
+          })
+        )}
+      </div>
+      <div className="border-t border-[var(--line)] p-3">
+        {props.routeNote ? (
+          <div className="mb-2 text-xs text-[var(--accent)]">{props.routeNote}</div>
+        ) : null}
+        <textarea
+          value={props.prompt}
+          disabled={props.disabled || props.busy}
+          on
