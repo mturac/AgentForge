@@ -1,0 +1,79 @@
+hadow-soft"
+                >
+                  <span className="relative text-base">
+                    {avatarFor(a)}
+                    <span
+                      className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[var(--card)]"
+                      style={{ backgroundColor: color }}
+                    />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[11px] font-medium leading-tight">
+                      {a.name}
+                    </p>
+                    <p className="text-[9px] leading-tight" style={{ color }}>
+                      {a.status}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={() => onOpen("agents")}
+            className="mt-2 flex items-center gap-1 text-[10px] text-[var(--primary)] opacity-70 transition-opacity hover:opacity-100"
+          >
+            Manage all agents <ArrowRight className="h-2.5 w-2.5" />
+          </button>
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {(
+          [
+            [
+              Bot,
+              "Agents",
+              "Persistent named bots with memory, persona, and a VM screen.",
+              "agents",
+              "#10b981",
+            ],
+            [
+              Users,
+              "Groups & command chain",
+              "An orchestrator routes work to specialists who can also talk to each other.",
+              "groups",
+              "#0d9488",
+            ],
+            [
+              Server,
+              "Shared VM",
+              "One computer per account — same files, memory, and sessions for every agent.",
+              "vm",
+              "#3d6b54",
+            ],
+            [
+              ShieldCheck,
+              "Guardrails",
+              "Irreversible actions queue for approval. Bots draft, you decide.",
+              "approvals",
+              "#b45309",
+            ],
+          ] as const
+        ).map(([Icon, title, desc, v, color]) => (
+          <button
+            key={title}
+            type="button"
+            onClick={() => onOpen(v)}
+            className="card-interactive group flex flex-col gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 text-left shadow-soft hover:border-[var(--primary)]/30 hover:shadow-card-hover"
+          >
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-xl shadow-soft transition-transform group-hover:scale-110"
+              style={{ backgroundColor: `${color}1a`, color }}
+            >
+              <Icon className="h-5 w-5" style={{ color }} />
+            </div>
+            <h4 className="text-sm font-semibold">{title}</h4>
+            <p className="text-xs leading-relaxed text-[var(--muted)]">{desc}</p>
+            <span classNa
