@@ -17,23 +17,23 @@ Persistent named agents. Groups with a command chain. A shared VM workspace. Ope
 
 ### Dashboard
 
-![AgentForge dashboard](media/dashboard.png)
+![AgentForge dashboard](media/dashboard.jpg)
 
 ### Agent fleet
 
-![Agent fleet cards](media/agents.png)
+![Agent fleet cards](media/agents.jpg)
 
 ### Groups & command chain
 
-![Groups](media/groups.png)
+![Groups](media/groups.jpg)
 
 ### Tools & event stream
 
-![Tool events](media/tool-events.png)
+![Tool events](media/tool-events.jpg)
 
 ### Shared VM
 
-![Shared VM](media/shared-vm.png)
+![Shared VM](media/shared-vm.jpg)
 
 ---
 
