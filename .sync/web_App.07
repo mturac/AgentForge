@@ -1,0 +1,95 @@
+mpty="No skills yet — seed demo team."
+              items={skills.map((s) => ({
+                id: s.id,
+                title: s.name,
+                meta: s.description || "Reusable instruction set",
+              }))}
+            />
+          )}
+          {view === "routines" && (
+            <SimpleList
+              title="Routines"
+              empty="No routines yet."
+              items={routines.map((r) => ({
+                id: r.id,
+                title: r.name,
+                meta: r.enabled ? "enabled" : "paused",
+              }))}
+            />
+          )}
+
+          {view === "approvals" && <ApprovalsView approvals={approvals} />}
+          {view === "activity" && <ActivityView audit={audit} />}
+        </main>
+      </div>
+
+      <footer className="mt-auto border-t border-[var(--border)] bg-[var(--bg)]/70 backdrop-blur-xl">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-[11px] text-[var(--muted)]">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5 font-medium text-[var(--foreground)]">
+              <span className="h-1.5 w-1.5 animate-live rounded-full bg-emerald-500" />{" "}
+              AgentForge
+            </span>
+            <span className="hidden sm:inline">·</span>
+            <span className="hidden sm:inline">
+              GrokBot-style multi-agent orchestration
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{" "}
+              {agents.length} agents
+            </span>
+            <span className="flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-blue-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />{" "}
+              {groups.length} groups
+            </span>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function Dashboard({
+  agents,
+  groups,
+  providers,
+  approvals,
+  skills,
+  routines,
+  files,
+  memoryKeys,
+  audit,
+  busy,
+  empty,
+  onOpen,
+  onSeed,
+}: {
+  agents: Agent[];
+  groups: Group[];
+  providers: Provider[];
+  approvals: number;
+  skills: number;
+  routines: number;
+  files: number;
+  memoryKeys: number;
+  audit: Array<{ id: string; at: number; kind: string; actorId: string }>;
+  busy: boolean;
+  empty: boolean;
+  onOpen: (v: View) => void;
+  onSeed: () => void;
+}) {
+  const waiting = agents.filter(
+    (a) => a.status === "busy" || a.status === "waiting",
+  ).length;
+  const stats: Array<{
+    icon: typeof Bot;
+    label: string;
+    value: number;
+    color: string;
+    view: View;
+  }> = [
+    { icon: Bot, label: "Agents", value: agents.length, color: "#0f9f6e", view: "agents" },
+    { icon: Users, label: "Groups", value: groups.length, color: "#0d9488", view: "groups" },
+    { icon: FileT
