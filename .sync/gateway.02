@@ -1,0 +1,72 @@
+ if (method === "POST" && pathOnly === "/agents") {
+        const body = await readJson(req);
+        const agent = forge.agents.create({
+          name: String(body.name || ""),
+          role: body.role as never,
+          title: body.title != null ? String(body.title) : undefined,
+          modelId: body.modelId != null ? String(body.modelId) : undefined,
+          hopBaseUrl:
+            body.hopBaseUrl != null ? String(body.hopBaseUrl) : undefined,
+          providerId:
+            body.providerId != null ? String(body.providerId) : undefined,
+          contract: (body.contract as never) ?? undefined,
+        });
+        return json(res, 200, { ok: true, agent });
+      }
+
+      if (method === "POST" && pathOnly === "/setup/seed") {
+        const result = forge.seed();
+        return json(res, 200, { ok: true, ...result });
+      }
+
+      if (method === "GET" && pathOnly === "/audit") {
+        const limit = Math.min(
+          500,
+          Math.max(1, Number(u.searchParams.get("limit") || 100)),
+        );
+        const audit = forge.store.load().audit.slice(-limit).reverse();
+        return json(res, 200, { ok: true, audit });
+      }
+
+      // Providers
+      if (method === "GET" && pathOnly === "/tools") {
+        return json(res, 200, {
+          ok: true,
+          tools: forge.tools.catalog(),
+          openHandsUrl: process.env.OPENHANDS_URL || null,
+        });
+      }
+      if (method === "GET" && pathOnly === "/conversations") {
+        const agentId = u.searchParams.get("agentId") || undefined;
+        const groupId = u.searchParams.get("groupId") || undefined;
+        return json(res, 200, {
+          ok: true,
+          conversations: forge.chat.listConversations({ agentId, groupId }),
+        });
+      }
+      if (method === "GET" && pathOnly === "/providers") {
+        return json(res, 200, { ok: true, providers: forge.providers.list() });
+      }
+      if (method === "POST" && pathOnly === "/providers") {
+        const body = await readJson(req);
+        const provider = forge.providers.upsert({
+          id: body.id != null ? String(body.id) : undefined,
+          kind: body.kind as never,
+          name: body.name != null ? String(body.name) : undefined,
+          baseUrl: body.baseUrl != null ? String(body.baseUrl) : undefined,
+          defaultModel:
+            body.defaultModel != null ? String(body.defaultModel) : undefined,
+          apiKey: body.apiKey != null ? String(body.apiKey) : undefined,
+          enabled: body.enabled !== false,
+          actorId: String(body.actorId || "human"),
+        });
+        return json(res, 200, { ok: true, provider });
+      }
+
+      // Shared VM
+      if (method === "GET" && pathOnly === "/vm/files") {
+        return json(res, 200, { ok: true, files: forge.vm.listFiles() });
+      }
+      if (method === "GET" && pathOnly.startsWith("/vm/files/")) {
+        const p = decodeURIComponent(pathOnly.slice("/vm/files/".length));
+        return json(res, 200, { ok: true, ...forge.vm.rea
