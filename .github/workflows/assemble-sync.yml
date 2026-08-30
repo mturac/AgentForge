@@ -26,10 +26,13 @@ jobs:
                   continue
               parts = [(Path(".sync") / n).read_bytes() for n in a["parts"]]
               enc = a.get("encoding", "utf-8")
-              if enc == "base64":
-                  data = base64.b64decode(b"".join(parts))
-              elif enc == "gzip-base64":
-                  data = gzip.decompress(base64.b64decode(b"".join(parts)))
+              if enc in ("base64", "gzip-base64"):
+                  joined = b"".join(parts)
+                  for ch in (b"\n", b"\r", b" ", b"\t"):
+                      joined = joined.replace(ch, b"")
+                  data = base64.b64decode(joined)
+                  if enc == "gzip-base64":
+                      data = gzip.decompress(data)
               else:
                   data = b"".join(parts)
               digest = hashlib.sha256(data).hexdigest()
