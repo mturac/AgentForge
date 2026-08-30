@@ -1,0 +1,91 @@
+thod = req.method || "GET";
+      const urlRaw = req.url || "/";
+      const pathOnly = urlRaw.split("?")[0] || "/";
+      const u = new URL(urlRaw, "http://127.0.0.1");
+
+      if (method === "GET" && (pathOnly === "/" || pathOnly === "/console")) {
+        if (tryServeWeb("/", res)) return;
+        const html = Buffer.from(consoleHtml());
+        res.writeHead(200, {
+          "content-type": "text/html; charset=utf-8",
+          "content-length": html.length,
+        });
+        res.end(html);
+        return;
+      }
+      if (
+        method === "GET" &&
+        (pathOnly.startsWith("/assets/") ||
+          pathOnly === "/favicon.svg" ||
+          pathOnly === "/favicon.ico")
+      ) {
+        if (tryServeWeb(pathOnly, res)) return;
+      }
+
+      if (method === "GET" && (pathOnly === "/health" || pathOnly === "/healthz")) {
+        return json(res, 200, {
+          ok: true,
+          service: "agentforge",
+          port: listeningPort,
+          agents: forge.agents.list().length,
+        });
+      }
+
+      // Agents
+      if (method === "GET" && pathOnly === "/agents") {
+        return json(res, 200, { ok: true, agents: forge.agents.list() });
+      }
+      if (
+        method === "POST" &&
+        pathOnly.startsWith("/agents/") &&
+        pathOnly.endsWith("/chat")
+      ) {
+        const id = pathOnly.split("/")[2];
+        const body = await readJson(req);
+        const out = await forge.chat.agentChat({
+          agentId: String(id),
+          message: String(body.message || ""),
+          conversationId: body.conversationId
+            ? String(body.conversationId)
+            : undefined,
+          useTools:
+            body.useTools === undefined ? undefined : Boolean(body.useTools),
+          openHands: body.openHands ? true : undefined,
+        });
+        return json(res, 200, { ok: true, ...out });
+      }
+      if (
+        method === "GET" &&
+        pathOnly.startsWith("/agents/") &&
+        pathOnly.endsWith("/events")
+      ) {
+        const id = pathOnly.split("/")[2];
+        return json(res, 200, {
+          ok: true,
+          events: forge.events.list(String(id), 100),
+        });
+      }
+      if (
+        method === "POST" &&
+        pathOnly.startsWith("/agents/") &&
+        pathOnly.endsWith("/contract")
+      ) {
+        const id = pathOnly.split("/")[2];
+        const body = await readJson(req);
+        const agent = forge.agents.setContract(
+          String(id),
+          body.contract as never,
+          String(body.actorId || ""),
+        );
+        return json(res, 200, { ok: true, agent });
+      }
+      if (method === "GET" && pathOnly.startsWith("/agents/")) {
+        const id = pathOnly.slice("/agents/".length);
+        if (id.includes("/")) {
+          return json(res, 404, { ok: false, error: "not_found" });
+        }
+        const a = forge.agents.get(id);
+        if (!a) return json(res, 404, { ok: false, error: "unknown_agent" });
+        return json(res, 200, { ok: true, agent: a });
+      }
+     
