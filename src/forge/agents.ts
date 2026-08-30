@@ -157,7 +157,7 @@ export function createAgentApi(store: ForgeStore) {
         const clash = Object.values(state.agents).find(
           (a) => a.id !== id && a.name.toLowerCase() === name.toLowerCase(),
         );
-      if (clash) throw new Error(`duplicate_name:${clash.id}`);
+        if (clash) throw new Error(`duplicate_name:${clash.id}`);
         row.name = name;
       }
       if (patch.role != null) row.role = patch.role;
