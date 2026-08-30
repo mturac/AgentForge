@@ -1,0 +1,62 @@
+uthorized" || msg === "denied"
+          ? 403
+          : msg === "no_available_agents"
+            ? 503
+            : msg.startsWith("unknown_") ||
+                msg.startsWith("missing_") ||
+                msg.startsWith("not_") ||
+                msg.startsWith("duplicate_") ||
+                msg.startsWith("group_size") ||
+                msg.startsWith("owner_") ||
+                msg.startsWith("to_") ||
+                msg.startsWith("agent_") ||
+                msg.startsWith("skill_") ||
+                msg.startsWith("interval_") ||
+                msg.startsWith("invalid_") ||
+                msg.startsWith("approval_") ||
+                msg.startsWith("bad_") ||
+                msg.startsWith("contract_") ||
+                msg.startsWith("handoff_") ||
+                msg.startsWith("evidence_") ||
+                msg.startsWith("provider_") ||
+                msg.startsWith("path_") ||
+                msg.startsWith("file_")
+              ? 400
+              : 500;
+      log("err", msg);
+      return json(res, code, { ok: false, error: msg });
+    }
+  });
+
+  function listen(): Promise<{ port: number; host: string }> {
+    return new Promise((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(configuredPort, host, () => {
+        const addr = server.address();
+        listeningPort =
+          addr && typeof addr === "object" ? addr.port : configuredPort;
+        log("listening", `http://${host}:${listeningPort}`);
+        resolve({ port: listeningPort, host });
+      });
+    });
+  }
+
+  function close(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      server.close((err) => (err ? reject(err) : resolve()));
+    });
+  }
+
+  return {
+    server,
+    forge,
+    listen,
+    close,
+    get port() {
+      return listeningPort;
+    },
+    host,
+  };
+}
+
+export type ForgeGateway = ReturnType<typeof createForgeGateway>;
