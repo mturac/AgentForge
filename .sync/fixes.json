@@ -10,5 +10,17 @@
     "replacements": [
       {"from": "TuxKBTa", "to": "TuzKBTa"}
     ]
+  },
+  {
+    "path": ".sync/wplgz.011",
+    "replacements": [
+      {"from": "SXlS2Q8mL", "to": "SXlS1Q8mL"}
+    ]
+  },
+  {
+    "path": ".sync/wplgz.027",
+    "replacements": [
+      {"from": "TgaK0wCyW", "to": "TgaK1wCyW"}
+    ]
   }
 ]
