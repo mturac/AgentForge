@@ -1,0 +1,109 @@
+ge.agents.create({
+      name: "Chief",
+      role: "chief_of_staff",
+    });
+    const bot = forge.agents.create({ name: "Ops", role: "worker" });
+    forge.guardrails.setPolicy(
+      bot.id,
+      { actions: { irreversible: "ask" } },
+      chief.id,
+    );
+    const check = forge.guardrails.check(
+      bot.id,
+      "irreversible",
+      "delete production bucket",
+      { resource: "s3://prod" },
+    );
+    expect(check.decision).toBe("pending");
+    expect(check.approvalId).toBeTruthy();
+
+    const approved = forge.guardrails.resolve(
+      check.approvalId!,
+      "approved",
+      "human",
+    );
+    expect(approved.status).toBe("approved");
+
+    forge.guardrails.setPolicy(
+      bot.id,
+      { actions: { exec: "deny" } },
+      chief.id,
+    );
+    expect(forge.guardrails.check(bot.id, "exec", "rm -rf").decision).toBe(
+      "deny",
+    );
+  });
+
+  it("rejects group larger than max", () => {
+    const ids = [];
+    for (let i = 0; i < GROUP_MAX + 1; i++) {
+      ids.push(forge.agents.create({ name: `M${i}`, role: "worker" }).id);
+    }
+    expect(() =>
+      forge.groups.create({ name: "too-big", memberIds: ids }),
+    ).toThrow(new RegExp(`group_size`));
+  });
+
+  it("rejects approval resolve by non-chief agents", () => {
+    const chief = forge.agents.create({
+      name: "Chief",
+      role: "chief_of_staff",
+    });
+    const worker = forge.agents.create({ name: "Worker", role: "worker" });
+    const check = forge.guardrails.check(
+      worker.id,
+      "irreversible",
+      "wipe disk",
+    );
+    expect(() =>
+      forge.guardrails.resolve(check.approvalId!, "approved", worker.id),
+    ).toThrow(/not_authorized/);
+    const ok = forge.guardrails.resolve(
+      check.approvalId!,
+      "approved",
+      chief.id,
+    );
+    expect(ok.status).toBe("approved");
+  });
+
+  it("excludes offline/error agents from auto-assign", () => {
+    const chief = forge.agents.create({
+      name: "Chief",
+      role: "chief_of_staff",
+    });
+    const offline = forge.agents.create({
+      name: "Down",
+      role: "specialist",
+      title: "Inbox Manager",
+    });
+    forge.agents.update(offline.id, { status: "offline" });
+    const fallback = forge.orchestrator.submit({
+      title: "Clear inbox",
+      body: "triage mail",
+      requestedBy: chief.id,
+    });
+    expect(fallback.assignedTo).toBe(chief.id);
+
+    forge.agents.update(offline.id, { status: "error" });
+    expect(() =>
+      forge.orchestrator.submit({
+        title: "Clear inbox again",
+        body: "triage mail",
+        requestedBy: chief.id,
+        assignTo: offline.id,
+      }),
+    ).toThrow(/agent_unavailable/);
+
+    forge.agents.update(chief.id, { status: "offline" });
+    expect(() =>
+      forge.orchestrator.submit({
+        title: "nobody home",
+        body: "should fail",
+        requestedBy: chief.id,
+      }),
+    ).toThrow(/no_available_agents/);
+  });
+
+  it("rejects bad work status and restores busy on reopen", () => {
+    const chief = forge.agents.create({
+     
