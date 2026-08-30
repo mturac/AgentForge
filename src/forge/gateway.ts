@@ -1,1 +1,1 @@
-PLACEHOLDER_WILL_REPLACE_WITH_FULL
+@/tmp/agentforge-sync/ready/grow_15000.txt
