@@ -1,227 +1,289 @@
-import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
+/**
+ * OpenAI-compatible hop that applies evidence-backed wire maps before upstream.
+ *
+ * Better than stock opengrok hop-server.py for this lane:
+ *  - applies `applyProviderReasoningControls` (Contract A)
+ *  - answers BOTH `/healthz` and `/health` (fixes picker/doctor mismatch)
+ *  - streams SSE; never logs Authorization or bodies
+ */
 
-export type HopProvider = "codex" | "claude" | "gemini" | "opencode";
+import http from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import {
+  applyProviderReasoningControls,
+  type HarnessParameter,
+} from "../wire-maps.js";
 
-export type HopRunRequest = {
-  from: HopProvider;
-  to: HopProvider;
-  prompt: string;
-  context?: string;
+export const DEFAULT_HOP_PORT = 18790;
+
+export type HopOptions = {
+  port?: number;
+  host?: string;
+  upstream?: string;
+  apiKey?: string | null;
+  log?: (...args: unknown[]) => void;
+  /** Test inject: replace upstream fetch. */
+  fetchImpl?: typeof fetch;
 };
 
-export type HopArtifact = {
-  id: string;
-  createdAt: string;
-  request: HopRunRequest;
-  fromOutput: string;
-  handoffPrompt: string;
-  toOutput: string;
-  status: "completed" | "failed";
-  error?: string;
-};
-
-export type HopCliResult = {
-  ok: boolean;
-  stdout: string;
-  stderr: string;
-  code: number | null;
-};
-
-type SpawnFn = (command: string, args: string[], options: { cwd?: string }) => Promise<HopCliResult>;
-
-const DEFAULT_ROOT = path.join(process.cwd(), ".agentforge", "hop");
-
-function artifactPath(root: string, id: string): string {
-  return path.join(root, `${id}.json`);
-}
-
-export function buildHandoffPrompt(input: {
-  from: HopProvider;
-  to: HopProvider;
-  originalPrompt: string;
-  context?: string;
-  priorOutput: string;
-}): string {
-  const contextBlock = input.context?.trim()
-    ? `\nShared context:\n${input.context.trim()}\n`
-    : "";
-  return [
-    `You are continuing a handoff from ${input.from} to ${input.to}.`,
-    "Treat the prior output as draft work to refine, not as final truth.",
-    "Preserve useful structure, correct mistakes, and produce the best next version.",
-    "",
-    `Original prompt:\n${input.originalPrompt.trim()}`,
-    contextBlock,
-    `Prior ${input.from} output:\n${input.priorOutput.trim()}`,
-    "",
-    `Now produce the improved ${input.to} result.`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
-
-export function providerCommand(provider: HopProvider): { command: string; argsPrefix: string[] } {
-  switch (provider) {
-    case "codex":
-      return { command: "codex", argsPrefix: ["exec", "--skip-git-repo-check"] };
-    case "claude":
-      return { command: "claude", argsPrefix: ["-p"] };
-    case "gemini":
-      return { command: "gemini", argsPrefix: ["--prompt"] };
-    case "opencode":
-      return { command: "opencode", argsPrefix: ["run"] };
-  }
-}
-
-export async function runProviderPrompt(input: {
-  provider: HopProvider;
-  prompt: string;
-  cwd?: string;
-  spawn: SpawnFn;
-}): Promise<HopCliResult> {
-  const spec = providerCommand(input.provider);
-  return input.spawn(spec.command, [...spec.argsPrefix, input.prompt], { cwd: input.cwd });
-}
-
-export async function runHop(input: {
-  request: HopRunRequest;
-  cwd?: string;
-  rootDir?: string;
-  spawn: SpawnFn;
-  now?: () => Date;
-  id?: () => string;
-}): Promise<HopArtifact> {
-  const root = input.rootDir ?? DEFAULT_ROOT;
-  await mkdir(root, { recursive: true });
-  const id = input.id?.() ?? randomUUID();
-  const createdAt = (input.now?.() ?? new Date()).toISOString();
-  const request: HopRunRequest = {
-    from: input.request.from,
-    to: input.request.to,
-    prompt: input.request.prompt.trim(),
-    context: input.request.context?.trim() || undefined,
-  };
-
-  if (!request.prompt) {
-    const failed: HopArtifact = {
-      id,
-      createdAt,
-      request,
-      fromOutput: "",
-      handoffPrompt: "",
-      toOutput: "",
-      status: "failed",
-      error: "prompt is required",
-    };
-    await writeFile(artifactPath(root, id), `${JSON.stringify(failed, null, 2)}\n`, "utf8");
-    return failed;
-  }
-
-  if (request.from === request.to) {
-    const failed: HopArtifact = {
-      id,
-      createdAt,
-      request,
-      fromOutput: "",
-      handoffPrompt: "",
-      toOutput: "",
-      status: "failed",
-      error: "from and to providers must differ",
-    };
-    await writeFile(artifactPath(root, id), `${JSON.stringify(failed, null, 2)}\n`, "utf8");
-    return failed;
-  }
-
-  const fromResult = await runProviderPrompt({
-    provider: request.from,
-    prompt: request.prompt,
-    cwd: input.cwd,
-    spawn: input.spawn,
+function readBody(req: IncomingMessage, max = 64 * 1024 * 1024): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    req.on("data", (d: Buffer) => {
+      size += d.length;
+      if (size > max) {
+        reject(new Error("body_too_large"));
+        return;
+      }
+      chunks.push(d);
+    });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
   });
-  if (!fromResult.ok) {
-    const failed: HopArtifact = {
-      id,
-      createdAt,
-      request,
-      fromOutput: fromResult.stdout,
-      handoffPrompt: "",
-      toOutput: "",
-      status: "failed",
-      error: fromResult.stderr || `${request.from} failed with code ${fromResult.code ?? "unknown"}`,
-    };
-    await writeFile(artifactPath(root, id), `${JSON.stringify(failed, null, 2)}\n`, "utf8");
-    return failed;
-  }
-
-  const handoffPrompt = buildHandoffPrompt({
-    from: request.from,
-    to: request.to,
-    originalPrompt: request.prompt,
-    context: request.context,
-    priorOutput: fromResult.stdout,
-  });
-  const toResult = await runProviderPrompt({
-    provider: request.to,
-    prompt: handoffPrompt,
-    cwd: input.cwd,
-    spawn: input.spawn,
-  });
-
-  const artifact: HopArtifact = {
-    id,
-    createdAt,
-    request,
-    fromOutput: fromResult.stdout,
-    handoffPrompt,
-    toOutput: toResult.stdout,
-    status: toResult.ok ? "completed" : "failed",
-    error: toResult.ok
-      ? undefined
-      : toResult.stderr || `${request.to} failed with code ${toResult.code ?? "unknown"}`,
-  };
-  await writeFile(artifactPath(root, id), `${JSON.stringify(artifact, null, 2)}\n`, "utf8");
-  return artifact;
 }
 
-export async function listHopArtifacts(rootDir = DEFAULT_ROOT): Promise<HopArtifact[]> {
-  const { readdir } = await import("node:fs/promises");
-  try {
-    const entries = await readdir(rootDir);
-    const artifacts: HopArtifact[] = [];
-    for (const entry of entries) {
-      if (!entry.endsWith(".json")) continue;
-      const raw = await readFile(path.join(rootDir, entry), "utf8");
-      artifacts.push(JSON.parse(raw) as HopArtifact);
+function json(res: ServerResponse, code: number, obj: unknown): void {
+  const payload = Buffer.from(JSON.stringify(obj));
+  res.writeHead(code, {
+    "content-type": "application/json",
+    "content-length": payload.length,
+  });
+  res.end(payload);
+}
+
+function writeWithBackpressure(
+  res: ServerResponse,
+  chunk: Buffer,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const ok = res.write(chunk, (err) => {
+      if (err) reject(err);
+    });
+    if (ok) {
+      resolve();
+      return;
     }
-    return artifacts.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  } catch {
-    return [];
-  }
+    const onDrain = () => {
+      res.off("error", onError);
+      resolve();
+    };
+    const onError = (err: Error) => {
+      res.off("drain", onDrain);
+      reject(err);
+    };
+    res.once("drain", onDrain);
+    res.once("error", onError);
+  });
 }
 
-export async function readHopArtifact(id: string, rootDir = DEFAULT_ROOT): Promise<HopArtifact | null> {
-  try {
-    const raw = await readFile(artifactPath(rootDir, id), "utf8");
-    return JSON.parse(raw) as HopArtifact;
-  } catch {
-    return null;
+export function createHop(opts: HopOptions = {}) {
+  const configuredPort = opts.port ?? DEFAULT_HOP_PORT;
+  const host = opts.host ?? "127.0.0.1";
+  const upstream = (opts.upstream || "http://127.0.0.1:8642").replace(/\/$/, "");
+  const apiKey = opts.apiKey ?? process.env.HOP_API_KEY ?? process.env.API_SERVER_KEY ?? null;
+  const log = opts.log ?? ((...a: unknown[]) => console.error("[hop]", ...a));
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  let listeningPort = configuredPort;
+
+  async function probeUpstream(): Promise<boolean> {
+    try {
+      const r = await fetchImpl(`${upstream}/health`, {
+        signal: AbortSignal.timeout(3000),
+      });
+      return r.status < 500;
+    } catch {
+      try {
+        const r = await fetchImpl(`${upstream}/healthz`, {
+          signal: AbortSignal.timeout(3000),
+        });
+        return r.status < 500;
+      } catch {
+        return false;
+      }
+    }
   }
+
+  async function health(res: ServerResponse): Promise<void> {
+    const up = await probeUpstream();
+    json(res, 200, {
+      ok: true,
+      service: "agentforge-hop",
+      port: listeningPort,
+      upstream_reachable: up,
+    });
+  }
+
+  async function relay(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    let body: Buffer;
+    try {
+      body = await readBody(req);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg === "body_too_large") {
+        return json(res, 413, { error: "body too large" });
+      }
+      return json(res, 400, { error: "bad_body" });
+    }
+
+    const path = req.url || "/";
+    let outBody = body;
+    if (
+      (req.method === "POST" || req.method === "PUT") &&
+      path.includes("/chat/completions") &&
+      body.length
+    ) {
+      try {
+        const parsed = JSON.parse(body.toString("utf8")) as Record<
+          string,
+          unknown
+        > & {
+          model?: string;
+          maxMode?: boolean;
+          parameters?: HarnessParameter[];
+        };
+        const route = applyProviderReasoningControls(parsed, {
+          modelId: String(parsed.model || ""),
+          baseUrl: upstream,
+          maxMode: parsed.maxMode === true,
+          parameters: parsed.parameters,
+        });
+        // Always strip harness-only fields (even when route is "none").
+        delete parsed.parameters;
+        delete parsed.maxMode;
+        outBody = Buffer.from(JSON.stringify(parsed));
+        log("wire-map", route, String(parsed.model || ""));
+      } catch {
+        /* leave body untouched if not JSON */
+      }
+    }
+
+    const headers: Record<string, string> = {
+      "content-type": req.headers["content-type"] || "application/json",
+      "accept-encoding": "identity",
+      "content-length": String(outBody.length),
+    };
+    if (apiKey) {
+      headers.authorization = `Bearer ${apiKey}`;
+    } else {
+      const inbound = req.headers.authorization;
+      if (typeof inbound === "string" && inbound.trim()) {
+        headers.authorization = inbound;
+      }
+    }
+
+    let upstreamRes: Response;
+    try {
+      const init: RequestInit = {
+        method: req.method || "GET",
+        headers,
+      };
+      if (req.method !== "GET" && req.method !== "HEAD") {
+        init.body = new Uint8Array(outBody);
+      }
+      upstreamRes = await fetchImpl(`${upstream}${path}`, init);
+    } catch (e) {
+      log("upstream unreachable", e instanceof Error ? e.message : e);
+      return json(res, 502, {
+        error: {
+          message: "upstream unreachable",
+          type: "hop_error",
+        },
+      });
+    }
+
+    const ctype = upstreamRes.headers.get("content-type") || "";
+    if (ctype.includes("text/event-stream")) {
+      res.writeHead(upstreamRes.status, {
+        "content-type": ctype,
+        "cache-control": "no-cache",
+        "transfer-encoding": "chunked",
+      });
+      const reader = upstreamRes.body?.getReader();
+      if (!reader) {
+        res.end();
+        return;
+      }
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) await writeWithBackpressure(res, Buffer.from(value));
+        }
+      } catch {
+        log("client aborted mid-stream");
+      }
+      res.end();
+      return;
+    }
+
+    const payload = Buffer.from(await upstreamRes.arrayBuffer());
+    const outHeaders: Record<string, string | number> = {
+      "content-length": payload.length,
+    };
+    if (ctype) outHeaders["content-type"] = ctype;
+    const rid =
+      upstreamRes.headers.get("x-request-id") ||
+      upstreamRes.headers.get("X-Request-Id");
+    if (rid) outHeaders["x-request-id"] = rid;
+    res.writeHead(upstreamRes.status, outHeaders);
+    res.end(payload);
+  }
+
+  const server = http.createServer(async (req, res) => {
+    try {
+      const pathOnly = (req.url || "/").split("?")[0] || "/";
+      if (
+        req.method === "GET" &&
+        (pathOnly === "/healthz" || pathOnly === "/health")
+      ) {
+        await health(res);
+        return;
+      }
+      await relay(req, res);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!res.headersSent) {
+        json(res, 500, { error: msg });
+      } else {
+        try {
+          res.end();
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  });
+
+  function listen(): Promise<{ port: number; host: string }> {
+    return new Promise((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(configuredPort, host, () => {
+        const addr = server.address();
+        listeningPort =
+          addr && typeof addr === "object" ? addr.port : configuredPort;
+        log("listening", `http://${host}:${listeningPort}`, "->", upstream);
+        resolve({ port: listeningPort, host });
+      });
+    });
+  }
+
+  function close(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      server.close((err) => (err ? reject(err) : resolve()));
+    });
+  }
+
+  return {
+    server,
+    listen,
+    close,
+    get port() {
+      return listeningPort;
+    },
+    host,
+    upstream,
+  };
 }
 
-export function hopFingerprint(artifact: HopArtifact): string {
-  return createHash("sha256")
-    .update(
-      JSON.stringify({
-        from: artifact.request.from,
-        to: artifact.request.to,
-        prompt: artifact.request.prompt,
-        context: artifact.request.context ?? "",
-        fromOutput: artifact.fromOutput,
-        toOutput: artifact.toOutput,
-        status: artifact.status,
-      }),
-    )
-    .digest("hex");
-}
+export type Hop = ReturnType<typeof createHop>;
