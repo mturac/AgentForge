@@ -1,0 +1,124 @@
+{
+  "source": "OnlyTerp/opengrok wire-captures/glm-5.3-flash (MIT, sanitized)",
+  "note": "Evidence sample for GLM wire honesty. No live credentials or prompt bodies.",
+  "probes": [
+    {
+      "probe": "P0",
+      "label": "models endpoint",
+      "status": 200,
+      "note": "slug glm-5.3-flash PRESENT",
+      "models": [
+        "glm-4.5",
+        "glm-4.5-air",
+        "glm-4.6",
+        "glm-4.7",
+        "glm-5",
+        "glm-5-turbo",
+        "glm-5.1",
+        "glm-5.2",
+        "glm-5.3",
+        "glm-5.3-flash"
+      ]
+    },
+    {
+      "probe": "P1",
+      "label": "bare minimal",
+      "status": 200,
+      "sent_shape": {
+        "model": "glm-5.3-flash"
+      },
+      "sent_keys": [
+        "model",
+        "messages"
+      ]
+    },
+    {
+      "probe": "P2",
+      "label": "thinking enabled + effort low",
+      "status": 200,
+      "sent_shape": {
+        "model": "glm-5.3-flash",
+        "thinking": {
+          "type": "enabled"
+        },
+        "reasoning_effort": "low"
+      },
+      "sent_keys": [
+        "model",
+        "messages",
+        "thinking",
+        "reasoning_effort"
+      ]
+    },
+    {
+      "probe": "P3",
+      "label": "thinking enabled + effort high",
+      "status": 200,
+      "sent_shape": {
+        "model": "glm-5.3-flash",
+        "thinking": {
+          "type": "enabled"
+        },
+        "reasoning_effort": "high"
+      },
+      "sent_keys": [
+        "model",
+        "messages",
+        "thinking",
+        "reasoning_effort"
+      ]
+    },
+    {
+      "probe": "P4",
+      "label": "thinking enabled + effort max",
+      "status": 200,
+      "sent_shape": {
+        "model": "glm-5.3-flash",
+        "thinking": {
+          "type": "enabled"
+        },
+        "reasoning_effort": "max"
+      },
+      "sent_keys": [
+        "model",
+        "messages",
+        "thinking",
+        "reasoning_effort"
+      ]
+    },
+    {
+      "probe": "P5",
+      "label": "thinking enabled + effort medium",
+      "status": 200,
+      "sent_shape": {
+        "model": "glm-5.3-flash",
+        "thinking": {
+          "type": "enabled"
+        },
+        "reasoning_effort": "medium"
+      },
+      "sent_keys": [
+        "model",
+        "messages",
+        "thinking",
+        "reasoning_effort"
+      ]
+    },
+    {
+      "probe": "P6",
+      "label": "thinking disabled (off-switch?)",
+      "status": 200,
+      "sent_shape": {
+        "model": "glm-5.3-flash",
+        "thinking": {
+          "type": "disabled"
+        }
+      },
+      "sent_keys": [
+        "model",
+        "messages",
+        "thinking"
+      ]
+    }
+  ]
+}
