@@ -4,5 +4,11 @@
     "replacements": [
       {"from": "Lcep8mK4", "to": "Lkep8mK4"}
     ]
+  },
+  {
+    "path": ".sync/plgz.090",
+    "replacements": [
+      {"from": "TuxKBTa", "to": "TuzKBTa"}
+    ]
   }
 ]
