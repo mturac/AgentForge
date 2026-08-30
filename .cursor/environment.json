@@ -1,0 +1,4 @@
+{
+  "name": "AgentForge",
+  "install": "node -v\nnpm -v\nnpm ci"
+}

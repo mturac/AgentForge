@@ -1,0 +1,40 @@
+name: Bug report
+description: Something broken in AgentForge
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Localhost / shared-VM context helps a lot.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Expected vs actual
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Repro steps
+      description: Commands, UI path, or curl
+      placeholder: |
+        1. npm run forge
+        2. Seed demo team
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      placeholder: v0.3.0 or main SHA
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      placeholder: |
+        OS:
+        Node:
+        Provider (mock/zai/…):

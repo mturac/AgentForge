@@ -1,0 +1,19 @@
+node_modules/
+dist/
+web/dist/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+.parity/
+baseline.json
+model-bindings.json
+services.json
+wire-captures/**/raw/
+.openthebot/
+**/forge-state.json
+# Construction / process notes stay local — not for the public tree
+docs/
+.cursor/rules/
+.cursor/skills/
