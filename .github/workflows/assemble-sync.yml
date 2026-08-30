@@ -15,7 +15,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 <<'PY'
-          import json, base64, hashlib
+          import json, base64, hashlib, gzip
           from pathlib import Path
           man = json.loads(Path(".sync/manifest.json").read_text())
           changed = []
@@ -25,8 +25,11 @@ jobs:
                   print(f"skip {a['dest']}: missing {len(missing)} parts")
                   continue
               parts = [(Path(".sync") / n).read_bytes() for n in a["parts"]]
-              if a["encoding"] == "base64":
+              enc = a.get("encoding", "utf-8")
+              if enc == "base64":
                   data = base64.b64decode(b"".join(parts))
+              elif enc == "gzip-base64":
+                  data = gzip.decompress(base64.b64decode(b"".join(parts)))
               else:
                   data = b"".join(parts)
               digest = hashlib.sha256(data).hexdigest()
