@@ -30,7 +30,33 @@
       ],
       "sha256": "dbe1a9d28e9c023acee1aca23245b34451a8b7db8e3ff4514b6e158e38a10123",
       "size": 20240
+    },
+    {
+      "dest": "web/src/App.tsx",
+      "encoding": "utf-8",
+      "parts": [
+        "web_App.00",
+        "web_App.01",
+        "web_App.02",
+        "web_App.03",
+        "web_App.04",
+        "web_App.05",
+        "web_App.06",
+        "web_App.07",
+        "web_App.08",
+        "web_App.09",
+        "web_App.10",
+        "web_App.11",
+        "web_App.12",
+        "web_App.13",
+        "web_App.14",
+        "web_App.15",
+        "web_App.16",
+        "web_App.17",
+        "web_App.18"
+      ],
+      "sha256": "58cdd7f85fe7ef1f7e3ac7deb95236cdc670df71a4be11e5b5e06af9f28bace0",
+      "size": 56830
     }
-  ],
-  "note": "retrigger-forge-test"
+  ]
 }
