@@ -18,24 +18,31 @@ jobs:
           import json, base64, hashlib, gzip
           from pathlib import Path
           man = json.loads(Path(".sync/manifest.json").read_text())
+          fixes = {}
           fix_path = Path(".sync/fixes.json")
           if fix_path.exists():
               for fx in json.loads(fix_path.read_text()):
-                  p = Path(fx["path"])
-                  if not p.exists():
-                      continue
-                  text = p.read_text()
-                  for r in fx.get("replacements", []):
-                      text = text.replace(r["from"], r["to"])
-                  p.write_text(text)
-                  print(f"applied fixes to {p}")
+                  fixes[fx["path"]] = fx.get("replacements", [])
           changed = []
           for a in man["assemblies"]:
               missing = [n for n in a["parts"] if not (Path(".sync") / n).exists()]
               if missing:
                   print(f"skip {a['dest']}: missing {len(missing)} parts")
                   continue
-              parts = [(Path(".sync") / n).read_bytes() for n in a["parts"]]
+              parts = []
+              for n in a["parts"]:
+                  p = Path(".sync") / n
+                  data = p.read_bytes()
+                  key = str(p).replace("\\", "/")
+                  # also try with leading ./
+                  reps = fixes.get(key) or fixes.get("./" + key) or fixes.get(str(p))
+                  if reps:
+                      text = data.decode("utf-8", errors="surrogateescape")
+                      for r in reps:
+                          text = text.replace(r["from"], r["to"])
+                      data = text.encode("utf-8", errors="surrogateescape")
+                      print(f"applied in-memory fixes to {p}")
+                  parts.append(data)
               enc = a.get("encoding", "utf-8")
               if enc in ("base64", "gzip-base64"):
                   joined = b"".join(parts)
