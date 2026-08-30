@@ -22,5 +22,29 @@
     "replacements": [
       {"from": "TgaK0wCyW", "to": "TgaK1wCyW"}
     ]
+  },
+  {
+    "path": ".sync/wplgz.043",
+    "replacements": [
+      {"from": "rY53sOwuy", "to": "rY53cOwuy"}
+    ]
+  },
+  {
+    "path": ".sync/wplgz.064",
+    "replacements": [
+      {"from": "zLfN9WBxe", "to": "zLfN8WBxe"}
+    ]
+  },
+  {
+    "path": ".sync/wplgz.069",
+    "replacements": [
+      {"from": "hz1o/b5fF", "to": "hz1o3b5fF"}
+    ]
+  },
+  {
+    "path": ".sync/wplgz.070",
+    "replacements": [
+      {"from": "TvN90Wcf8", "to": "TvN92Wcf8"}
+    ]
   }
 ]
