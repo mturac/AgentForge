@@ -1,0 +1,73 @@
+[var(--card-2)] text-[var(--muted)]",
+                  )}
+                >
+                  {count}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </nav>
+      <div className="mt-auto rounded-xl border border-[var(--border)] bg-gradient-to-br from-[var(--card)]/80 to-[var(--card)]/40 p-3 text-[11px] leading-relaxed text-[var(--muted)] shadow-soft">
+        <div className="mb-1 flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 animate-live rounded-full bg-emerald-500" />
+          <p className="font-medium text-[var(--foreground)]">Inspired by GrokBot</p>
+        </div>
+        <p>
+          Persistent agents share one VM. Orchestrator routes work to specialists
+          via a command chain.
+        </p>
+        <div className="mt-2 flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-2 py-1 text-[10px] font-medium text-[var(--foreground)]">
+          <HelpCircle className="h-3 w-3" /> AgentForge lane
+        </div>
+      </div>
+    </aside>
+  );
+
+  return (
+    <div className="flex min-h-screen flex-col bg-[var(--bg)] bg-mesh">
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-[var(--border)] bg-[var(--bg)]/70 px-4 shadow-soft backdrop-blur-xl">
+        <button
+          type="button"
+          className="rounded-lg p-2 text-[var(--muted)] hover:bg-[var(--muted-bg)] lg:hidden"
+          onClick={() => setMobileNav(true)}
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-sm font-semibold tracking-tight sm:text-base">
+            {meta.title}
+          </h1>
+          <p className="hidden truncate text-xs text-[var(--muted)] sm:block">
+            {meta.subtitle}
+          </p>
+        </div>
+        {empty ? (
+          <button
+            type="button"
+            onClick={() => void seed()}
+            disabled={busy}
+            className="hidden items-center gap-2 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-[var(--primary-fg)] sm:inline-flex"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+            {busy ? "Seeding…" : "Seed demo team"}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="rounded-lg border border-[var(--border)] p-2 text-[var(--muted)]"
+          aria-label="Activity"
+        >
+          <Activity className="h-4 w-4" />
+        </button>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        <div className="hidden w-64 shrink-0 lg:block">{sidebar}</div>
+        {mobileNav ? (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <button
+              type="button"
+              className="absolute inset-0 bg-[var(--foreground)]/30 backdrop-blur-[2px]"
+              onClick={() => setMobi
