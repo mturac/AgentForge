@@ -1,0 +1,23 @@
+{
+  "services": [
+    {
+      "port": 18790,
+      "name": "agentforge-hop",
+      "probe_url": "http://127.0.0.1:18790/healthz",
+      "probe_want": "\"ok\":true"
+    },
+    {
+      "port": 18795,
+      "name": "consult-gateway",
+      "probe_url": "http://127.0.0.1:18795/health",
+      "probe_want": "consult-gateway"
+    },
+    {
+      "port": 18800,
+      "name": "agentforge",
+      "probe_url": "http://127.0.0.1:18800/healthz",
+      "probe_want": "agentforge"
+    }
+  ],
+  "watched_files": []
+}

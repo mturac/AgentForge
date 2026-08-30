@@ -1,0 +1,50 @@
+{
+  "name": "agentforge",
+  "private": true,
+  "version": "0.3.0",
+  "description": "AgentForge — GrokBot-shaped multi-agent orchestration on a shared VM",
+  "keywords": [
+    "agentforge",
+    "multi-agent",
+    "ai-agents",
+    "orchestration",
+    "llm",
+    "typescript",
+    "openhands",
+    "shared-vm",
+    "command-chain"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc && npm run build:web",
+    "build:web": "npm --prefix web run build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:wire": "vitest run test/wire-maps.test.ts test/consult.test.ts test/doctor-hop.test.ts test/forge.test.ts",
+    "test:watch": "vitest",
+    "consult": "node dist/consult/serve.js",
+    "doctor": "node dist/doctor/cli.js",
+    "hop": "node dist/hop/serve.js",
+    "forge": "node dist/forge/serve.js",
+    "forge:web": "npm --prefix web run dev",
+    "ci": "npm run typecheck && npm run build && npm test"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mturac/AgentForge.git"
+  },
+  "homepage": "https://github.com/mturac/AgentForge#readme",
+  "bugs": {
+    "url": "https://github.com/mturac/AgentForge/issues"
+  },
+  "author": "mturac",
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0",
+    "vitest": "^1.6.0"
+  }
+}
