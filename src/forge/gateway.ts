@@ -1,1 +1,1 @@
-WILL_BE_REPLACED
+file:///tmp/agentforge-sync/ready/cou_gateway_final.json
