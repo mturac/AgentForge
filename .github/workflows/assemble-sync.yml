@@ -18,6 +18,17 @@ jobs:
           import json, base64, hashlib, gzip
           from pathlib import Path
           man = json.loads(Path(".sync/manifest.json").read_text())
+          fix_path = Path(".sync/fixes.json")
+          if fix_path.exists():
+              for fx in json.loads(fix_path.read_text()):
+                  p = Path(fx["path"])
+                  if not p.exists():
+                      continue
+                  text = p.read_text()
+                  for r in fx.get("replacements", []):
+                      text = text.replace(r["from"], r["to"])
+                  p.write_text(text)
+                  print(f"applied fixes to {p}")
           changed = []
           for a in man["assemblies"]:
               missing = [n for n in a["parts"] if not (Path(".sync") / n).exists()]
