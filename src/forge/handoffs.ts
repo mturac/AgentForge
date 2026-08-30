@@ -97,6 +97,7 @@ export function createHandoffApi(store: ForgeStore) {
         h.status = "rejected";
         h.result = String(result || "").trim() || "rejected";
       } else {
+        // completed
         if (actorId !== h.toAgentId && !isChief) throw new Error("not_authorized");
         if (h.status !== "open" && h.status !== "accepted") {
           throw new Error("handoff_not_active");
