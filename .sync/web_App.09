@@ -1,0 +1,65 @@
+      </span>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
+        {stats.map((s) => {
+          const Icon = s.icon;
+          return (
+            <button
+              key={s.label}
+              type="button"
+              onClick={() => onOpen(s.view)}
+              className={cx(
+                "card-interactive group flex flex-col items-start gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 text-left shadow-soft hover:border-[var(--primary)]/30 hover:shadow-card-hover",
+                s.label === "Approvals" && s.value > 0
+                  ? "border-amber-500/40 ring-1 ring-amber-500/20"
+                  : "",
+              )}
+            >
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-lg shadow-soft transition-transform group-hover:scale-110"
+                style={{ backgroundColor: `${s.color}1a`, color: s.color }}
+              >
+                <Icon className="h-4 w-4" style={{ color: s.color }} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold leading-none tabular-nums">
+                  {s.value}
+                </span>
+                <span className="mt-0.5 text-[10px] text-[var(--muted)]">
+                  {s.label}
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {agents.length > 0 ? (
+        <div className="card-interactive rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-soft">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--primary-dim)] shadow-soft">
+                <Bot className="h-3.5 w-3.5 text-[var(--primary)]" />
+              </div>
+              <h3 className="text-sm font-semibold">Agent fleet status</h3>
+            </div>
+            {waiting > 0 ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 px-2 py-0.5 text-[9px] text-amber-500 shadow-soft">
+                <span className="h-1.5 w-1.5 animate-live rounded-full bg-amber-500" />
+                {waiting} waiting
+              </span>
+            ) : null}
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {agents.map((a) => {
+              const color = statusHue(a.status);
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => onOpen("agents")}
+                  className="group flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card-2)]/40 px-2 py-1.5 text-left transition-all hover:border-[var(--primary)]/30 hover:s
