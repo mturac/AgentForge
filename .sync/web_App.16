@@ -1,0 +1,83 @@
+Change={(e) => props.onPrompt(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) props.onSend();
+          }}
+          placeholder={props.placeholder || "Message…"}
+          className="min-h-24 w-full resize-y rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--primary)]"
+        />
+        <div className="mt-2 flex justify-end">
+          <button
+            type="button"
+            disabled={props.disabled || props.busy}
+            onClick={props.onSend}
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--primary)] px-3 py-2 text-sm font-medium text-[var(--primary-fg)] disabled:opacity-40"
+          >
+            {props.busy ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Send className="size-4" />
+            )}
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SideTrace({
+  title,
+  lines,
+  events = [],
+  contract,
+}: {
+  title: string;
+  lines: ScreenLine[];
+  events?: AgentEvent[];
+  contract?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-soft">
+        <h3 className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
+          Tool events
+        </h3>
+        <div className="mt-3 max-h-[280px] space-y-2 overflow-auto">
+          {events.length === 0 ? (
+            <p className="text-xs text-[var(--muted)]">
+              No events yet. Try: <code>list files</code> or{" "}
+              <code>write notes/x.md with hello</code>
+            </p>
+          ) : (
+            events
+              .slice()
+              .reverse()
+              .map((e) => (
+                <div
+                  key={e.id}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--card-2)] px-2 py-1.5 text-[11px]"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={
+                        e.ok ? "text-[var(--primary)]" : "text-[var(--danger)]"
+                      }
+                    >
+                      {e.kind}
+                    </span>
+                    {e.tool ? (
+                      <span className="text-[var(--muted)]">{e.tool}</span>
+                    ) : null}
+                  </div>
+                  <div className="mt-0.5 truncate font-medium">{e.summary}</div>
+                  {e.detail ? (
+                    <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap font-mono text-[10px] text-[var(--muted)]">
+                      {e.detail.slice(0, 500)}
+                    </pre>
+                  ) : null}
+                </div>
+              ))
+          )}
+        </div>
+      </div>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sof
