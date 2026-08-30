@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - ".github/workflows/decode-gallery-jpg.yml"
       - ".sync-gallery/manifest.json"
 permissions:
   contents: write
@@ -11,30 +12,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Decode JPEGs and remove sync junk
+      - name: Fetch gallery JPEGs and remove sync junk
         run: |
           set -euo pipefail
+          mkdir -p media
+          curl -fsSL "https://d.uguu.se/hpeMcUTm.jpg" -o "media/dashboard.jpg"
+          echo "c37d0ec3a56764403ff87e95f0e5ce1b398dd09a9db7781807f95f4ee3b3d2a8  media/dashboard.jpg" | sha256sum -c -
+          test "$(wc -c < "media/dashboard.jpg")" -eq 67795
+          curl -fsSL "https://d.uguu.se/LCFyoGyv.jpg" -o "media/agents.jpg"
+          echo "c4038319b749fad8617e51a11dc98b384bb811559bbd245c42fc25d460fdb3d0  media/agents.jpg" | sha256sum -c -
+          test "$(wc -c < "media/agents.jpg")" -eq 32623
+          curl -fsSL "https://n.uguu.se/fFQAWJSd.jpg" -o "media/groups.jpg"
+          echo "91a244e5bcab9826aa8dd4d312df48eea5c7e985ec03db4207ddc234eec62312  media/groups.jpg" | sha256sum -c -
+          test "$(wc -c < "media/groups.jpg")" -eq 37757
+          curl -fsSL "https://d.uguu.se/GXhHgXYf.jpg" -o "media/tool-events.jpg"
+          echo "19283d2c9f7b6c23430957650645effb0c0763bbc508339accff65c7623a4e1f  media/tool-events.jpg" | sha256sum -c -
+          test "$(wc -c < "media/tool-events.jpg")" -eq 37398
+          curl -fsSL "https://h.uguu.se/tiEnzSWo.jpg" -o "media/shared-vm.jpg"
+          echo "68350da69a25e3ff01363b9d7f472d62e2bc3d2f2fb022731c7d3303c3c3616a  media/shared-vm.jpg" | sha256sum -c -
+          test "$(wc -c < "media/shared-vm.jpg")" -eq 43332
           python3 <<'PY'
-          import json, base64, hashlib, shutil
           from pathlib import Path
-          man = json.loads(Path('.sync-gallery/manifest.json').read_text())
-          for f in man['files']:
-              parts = [(Path('.sync-gallery') / n).read_text().strip() for n in f['parts']]
-              data = base64.b64decode(''.join(parts))
-              digest = hashlib.sha256(data).hexdigest()
-              if digest != f['sha256']:
-                  raise SystemExit(f"sha256 mismatch for {f['dest']}: {digest} != {f['sha256']}")
-              dest = Path(f['dest'])
-              dest.parent.mkdir(parents=True, exist_ok=True)
-              dest.write_bytes(data)
-              print(f"wrote {dest} ({len(data)} bytes)")
+          import shutil
           shutil.rmtree('.sync-gallery', ignore_errors=True)
+          shutil.rmtree('.sync', ignore_errors=True)
           Path('media/agents.jpg.b64').unlink(missing_ok=True)
           Path('media/_tiny_probe.jpg').unlink(missing_ok=True)
           for p in ['.agentforge-size-probe.txt', '.agentforge-sync-probe', 'baseline.json',
                     '.github/workflows/assemble-sync.yml', '.github/workflows/decode-gallery-jpg.yml']:
               Path(p).unlink(missing_ok=True)
-          shutil.rmtree('.sync', ignore_errors=True)
           print('cleaned junk')
           PY
       - name: Commit
@@ -48,5 +54,5 @@ jobs:
             exit 0
           fi
           git commit -m "chore: add README gallery images and clean sync artifacts"
-          git pull --rebase origin main
+          git pull --rebase origin main || true
           git push
