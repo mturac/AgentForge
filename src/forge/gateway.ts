@@ -1,1 +1,1 @@
-{{file:/workspace/src/forge/gateway.ts}}
+PLACEHOLDER
