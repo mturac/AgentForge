@@ -31,5 +31,6 @@
       "sha256": "dbe1a9d28e9c023acee1aca23245b34451a8b7db8e3ff4514b6e158e38a10123",
       "size": 20240
     }
-  ]
+  ],
+  "note": "retrigger-forge-test"
 }

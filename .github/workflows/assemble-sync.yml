@@ -40,7 +40,7 @@ jobs:
               dest.write_bytes(data)
               changed.append(a["dest"])
               print(f"wrote {a['dest']} ({len(data)} bytes)")
-          Path("/tmp/changed.txt").write_text("\n".join(changed))
+          Path("/tmp/changed.txt").write_text("\n".join(changed) + ("\n" if changed else ""))
           print(f"changed={len(changed)}")
           PY
       - name: Commit assembled files
@@ -52,8 +52,16 @@ jobs:
           fi
           git config user.name "mehmet turac"
           git config user.email "mehmetturac@gmail.com"
-          while IFS= read -r f; do
-            [ -n "$f" ] && git add "$f"
+          while IFS= read -r f || [ -n "${f:-}" ]; do
+            [ -n "${f:-}" ] || continue
+            git add -f -- "$f"
+            echo "staged $f"
           done < /tmp/changed.txt
+          git status
+          git diff --cached --stat
+          if git diff --cached --quiet; then
+            echo "nothing staged"
+            exit 0
+          fi
           git commit -m "chore: import AgentForge from OpenTheBot main"
           git push
