@@ -1,0 +1,81 @@
+{
+        const workId = pathOnly.split("/")[2];
+        const body = await readJson(req);
+        const work = forge.orchestrator.recordEvidence(
+          String(workId),
+          String(body.actorId || ""),
+          {
+            summary: String(body.summary || ""),
+            sources: Array.isArray(body.sources)
+              ? (body.sources as never)
+              : [],
+            filesChanged: Array.isArray(body.filesChanged)
+              ? body.filesChanged.map(String)
+              : [],
+            uncertainties: Array.isArray(body.uncertainties)
+              ? body.uncertainties.map(String)
+              : [],
+          },
+        );
+        return json(res, 200, { ok: true, work });
+      }
+
+      // Handoffs
+      if (method === "GET" && pathOnly === "/handoffs") {
+        const status = u.searchParams.get("status") as never;
+        return json(res, 200, {
+          ok: true,
+          handoffs: forge.handoffs.list(status || undefined),
+        });
+      }
+      if (method === "POST" && pathOnly === "/handoffs") {
+        const body = await readJson(req);
+        const handoff = forge.handoffs.create({
+          fromAgentId: String(body.fromAgentId || ""),
+          toAgentId: String(body.toAgentId || ""),
+          summary: String(body.summary || ""),
+          workId: body.workId != null ? String(body.workId) : null,
+        });
+        return json(res, 200, { ok: true, handoff });
+      }
+      if (
+        method === "POST" &&
+        pathOnly.startsWith("/handoffs/") &&
+        pathOnly.endsWith("/resolve")
+      ) {
+        const id = pathOnly.split("/")[2];
+        const body = await readJson(req);
+        const handoff = forge.handoffs.resolve(
+          String(id),
+          body.status as "accepted" | "completed" | "rejected",
+          String(body.actorId || ""),
+          body.result != null ? String(body.result) : undefined,
+        );
+        return json(res, 200, { ok: true, handoff });
+      }
+
+      // Skills
+      if (method === "GET" && pathOnly === "/skills") {
+        return json(res, 200, { ok: true, skills: forge.skills.list() });
+      }
+      if (method === "POST" && pathOnly === "/skills") {
+        const body = await readJson(req);
+        const skill = forge.skills.create({
+          name: String(body.name || ""),
+          description:
+            body.description != null ? String(body.description) : undefined,
+          instructions: String(body.instructions || ""),
+          createdBy: String(body.createdBy || ""),
+          sharedWith: Array.isArray(body.sharedWith)
+            ? body.sharedWith.map(String)
+            : undefined,
+        });
+        return json(res, 200, { ok: true, skill });
+      }
+
+      // Routines
+      if (method === "GET" && pathOnly === "/routines") {
+        return json(res, 200, { ok: true, routines: forge.routines.list() });
+      }
+      if (method === "GET" && pathOnly === "/routines/due") {
+        return json(res, 200, { ok: true, routines: forge.routines.due() }
