@@ -123,7 +123,15 @@ describe("wire-maps — claude / gemini / deepseek / glm", () => {
     expect(
       applyProviderReasoningControls(silent, { modelId: "glm-5.3-flash" }),
     ).toBe("glm-passthrough");
-    expect(silent.thinking).toEqual({ type: "enabled" });
+    expect(silent.thinking).toBeUndefined();
+
+    const effort: Record<string, unknown> = { model: "glm-5.3-flash" };
+    expect(
+      applyProviderReasoningControls(effort, {
+        modelId: "glm-5.3-flash",
+        parameters: [{ id: "effort", value: "max" }],
+      }),
+    ).toBe("glm-effort");
     expect(effort.thinking).toEqual({ type: "enabled" });
     expect(effort.reasoning_effort).toBe("max");
 
